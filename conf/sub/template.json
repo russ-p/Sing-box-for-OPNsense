@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "error",
+    "level": "debug",// debug > info > warn > error 测试没有问题后，修改为error，减少日志存储量。
     "timestamp": true
   },
   "experimental": {
@@ -28,7 +28,7 @@
       "interface_name": "tun_3000",
       "address": ["172.19.0.0/30"],
       "endpoint_independent_nat": false,
-      "stack": "system" //system > mixed > gvisor
+      "stack": "system"
     }
   ],
   "outbounds": [],
