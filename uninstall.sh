@@ -52,8 +52,6 @@ echo ""
 
 # 删除菜单和缓存
 rm -rf /usr/local/opnsense/mvc/app/models/OPNsense/sing-box
-rm -f /tmp/opnsense_menu_cache.xml
-rm -f /tmp/opnsense_acl_cache.json
 
 # 重启服务
 log "$YELLOW" "重新应用所有更改，请稍等..."
@@ -62,5 +60,5 @@ service configd restart > /dev/null 2>&1
 echo ""
 
 # 完成提示
-log "$GREEN" "卸载完成，请手动删除TUN接口、别名和浮动防火墙分流规则。"
+log "$GREEN" "卸载完成，请手动删除TUN接口、改回DoT设置。"
 echo ""
