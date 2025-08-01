@@ -20,13 +20,13 @@
     },
   "inbounds": [
     {
+      "mtu": 9000,  
       "type": "tun",
       "tag": "tun-in",
-      "interface_name": "tun_3000",
-      "address": ["172.19.0.0/30"],
-      "mtu": 9000,
       "auto_route": true,
       "strict_route": true,
+      "interface_name": "tun_3000",
+      "address": ["172.19.0.0/30"],
       "endpoint_independent_nat": false,
       "stack": "system" //system > mixed > gvisor
     }
