@@ -160,6 +160,10 @@ else
 fi
 echo ""
 
+# 删除菜单缓存
+rm -f /var/lib/php/tmp/opnsense_menu_cache.xml
+rm -f /var/lib/php/tmp/opnsense_acl_cache.json
+
 # 重新载入configd
 log "$YELLOW" "重新载入configd..."
 service configd restart > /dev/null 2>&1
@@ -176,5 +180,5 @@ configctl filter reload > /dev/null 2>&1
 echo ""
 
 # 完成提示
-log "$GREEN" "安装完毕，请重启防火墙，导航到VPN > Proxy Suite 进行配置。配置过程请参考配置教程。"
+log "$GREEN" "安装完毕，请导航到VPN > Proxy Suite 进行配置。配置过程请参考配置教程。"
 echo ""
