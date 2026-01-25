@@ -26,6 +26,15 @@ sh install.sh
 ```bash
 sh uninstall.sh
 ```
-## 配置教程
 
-[OPNsense 配置 sing-box 透明代理教程](https://pfchina.org/?p=12933)
+## 配置步骤
+1. 安装完成，导航到VPN>Proxy Suite>Sing-Box，修改sing-box出站（ outbounds到route部分) 内容并保存。
+2. 点击启动或重启按钮，转到接口>分配，将tun_3000虚拟网卡添加为接口并启用，无需输入IPv4地址和网关。
+3. 在系统>设置>常规添加两个DoT DNS，一个国内一个国外。
+4. 转到服务>Unbound DNS>DoT，选中启用DoT选项并应用。
+5. 转到防火墙>规则，在tun接口添加一条any to any防火墙规则，允许tun子网访问。
+6. 设置完成，客户端访问 ip111.cn，检查分流是否正常。
+
+## 其他事项
+1. 默认配置文件开启了clash api功能，访问 http://lan_ip:9090/ui 登录仪表盘查看代理连接信息。
+2. 订阅转换可以设置定时任务自动更新。转到系统>设置>任务，添加”sing-box update sub”任务项即可。
