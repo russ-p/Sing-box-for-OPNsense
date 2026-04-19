@@ -1,5 +1,5 @@
 ## Sing-box for OPNsense
-sing-box安装工具，在OPNsense上实现透明代理功能。在OPNsense 25.7上测试通过。
+Sing-box安装工具，在OPNsense上实现透明代理功能。在OPNsense 26.1上测试通过。
 
 ![](images/proxy.png)
 
@@ -7,7 +7,7 @@ sing-box安装工具，在OPNsense上实现透明代理功能。在OPNsense 25.7
 [Vincent-Loeng大佬魔改Sing-Box](https://github.com/Vincent-Loeng/sing-box) 
 
 ## 注意事项
-1. 当前仅支持x86_64 平台。
+1. 当前仅支持x86_64 平台。S
 2. 脚本不提供任何节点信息，请准备好自己的出站配置文件。
 3. 脚本会自动添加tun接口、防火墙规则，并开启DoT转发。
 4. 脚本集成配置模板，只需补充出站部分的配置部分配置即可使用。
@@ -28,13 +28,12 @@ sh uninstall.sh
 ```
 
 ## 配置步骤
-1. 安装完成，导航到VPN>Proxy Suite>Sing-Box，修改sing-box出站（ outbounds到route部分) 内容并保存。
-2. 点击启动或重启按钮，转到接口>分配，将tun_3000虚拟网卡添加为接口并启用，无需输入IPv4地址和网关。
-3. 在系统>设置>常规添加两个DoT DNS，一个国内一个国外。
-4. 转到服务>Unbound DNS>DoT，选中启用DoT选项并应用。
-5. 转到防火墙>规则，在tun接口添加一条any to any防火墙规则，允许tun子网访问。
+1. 安装完成，导航到 VPN>Proxy Suite>Sing-Box，修改sing-box出站（ outbounds到route部分) 内容并保存。
+2. 点击启动或重启按钮，转到 接口>分配，将tun_3000虚拟网卡添加为接口并启用，无需输入IPv4地址和网关。
+4. 转到 服务>Unbound DNS>常规，将监听接口修改为 53 以外的其他端口。
+5. 转到 防火墙>规则（新）），在tun接口添加一条 tun to tun 防火墙规则，允许tun子网访问。
 6. 设置完成，客户端访问 ip111.cn，检查分流是否正常。
 
 ## 其他事项
 1. 默认配置文件开启了clash api功能，访问 http://lan_ip:9090/ui 登录仪表盘查看代理连接信息。
-2. 订阅转换可以设置定时任务自动更新。转到系统>设置>任务，添加”sing-box update sub”任务项即可。
+2. 订阅转换可以设置定时任务自动更新。转到 系统>设置>任务，添加”Renew sing-box subscription”任务项即可。
