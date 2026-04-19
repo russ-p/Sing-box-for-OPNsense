@@ -1,5 +1,5 @@
 ## Sing-box for OPNsense
-Sing-box安装工具，在OPNsense上实现透明代理功能。在OPNsense 26.1上测试通过。
+Sing-box 一键安装工具，在OPNsense上实现透明代理功能。在OPNsense 26.1上测试通过。
 
 ![](images/proxy.png)
 
