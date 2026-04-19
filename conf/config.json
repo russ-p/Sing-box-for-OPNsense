@@ -27,7 +27,7 @@
       "strict_route": true,
       "interface_name": "tun_3000",
       "address": [
-        "172.19.0.0/30"
+        "172.19.0.1/30"
       ],
       "endpoint_independent_nat": false,
       "stack": "gvisor"
