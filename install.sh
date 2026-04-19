@@ -26,6 +26,9 @@ TMP_FILE="/tmp/config.xml.tmp"
 TIMESTAMP=$(date +%F-%H%M%S)
 BACKUP_FILE="/conf/config.xml.bak.$TIMESTAMP"
 
+TUN_INTERFACE="opt10"
+TUN_DEVICE="tun_3000"
+
 # 定义日志函数
 log() {
     local color="$1"
@@ -61,6 +64,7 @@ if [ -f /usr/local/etc/sing-box/sub/sub.sh ]; then
 bash /usr/local/etc/sing-box/sub/sub.sh
 EOF
 chmod +x /usr/bin/sub
+chmod +x /usr/local/etc/sing-box/sub/sub.sh
 else
   log "$RED" "订阅脚本sub.sh 不存在，跳过创建 /usr/bin/sub"
 fi
@@ -77,9 +81,12 @@ cp "$CONFIG_FILE" "$BACKUP_FILE" || {
   exit 1
 }
 
+export TUN_INTERFACE
+export TUN_DEVICE
+
 # 添加tun接口
 log "$YELLOW" "添加 tun_3000 接口..."
-if grep -q "<if>tun_3000</if>" "$CONFIG_FILE"; then
+if grep -q "<if>${TUN_DEVICE}</if>" "$CONFIG_FILE"; then
   log "$CYAN" "存在同名接口，忽略"
 else
   awk '
@@ -87,11 +94,11 @@ else
   {
     print
     if ($0 ~ /<\/lo0>/ && inserted == 0) {
-      print "    <opt10>"
-      print "      <if>tun_3000</if>"
+      print "    <" ENVIRON["TUN_INTERFACE"] ">"
+      print "      <if>" ENVIRON["TUN_DEVICE"] "</if>"
       print "      <descr>TUN</descr>"
       print "      <enable>1</enable>"
-      print "    </opt10>"
+      print "    </" ENVIRON["TUN_INTERFACE"] ">"
       inserted = 1
     }
   }
@@ -100,64 +107,184 @@ else
 fi
 echo ""
 
-# 添加防火墙规则（允许TUN子网互访问）
-log "$YELLOW" "添加防火墙规则..."
-if grep -q "c0398153-597b-403b-9069-734734b46497" "$CONFIG_FILE"; then
+# 添加防火墙规则
+log "$YELLOW" "添加 TUN 防火墙规则..."
+if grep -q "5a73c3dc-69b1-4e15-89cb-b542aa2c1154" "$CONFIG_FILE"; then
   log "$CYAN" "存在同名规则，忽略"
 else
-  awk '
-  /<filter>/ {
-    print
-    print "    <rule uuid=\"c0398153-597b-403b-9069-734734b46497\">"
-    print "      <type>pass</type>"
-    print "      <interface>opt10</interface>"
-    print "      <ipprotocol>inet</ipprotocol>"
-    print "      <statetype>keep state</statetype>"
-    print "      <direction>in</direction>"
-    print "      <quick>1</quick>"
-    print "      <source>"
-    print "        <network>opt10</network>"
-    print "      </source>"
-    print "      <destination>"
-    print "        <network>opt10</network>"
-    print "      </destination>"
-    print "    </rule>"
-    next
-  }
-  { print }
-  ' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
-  echo "规则添加完成"
-fi
-  echo ""
-
-# 启用 DoT 转发功能
-log "$YELLOW" "启用DoT转发功能..."
-if awk '
-  BEGIN { in_forwarding=0; dot_enabled=0 }
-  /<forwarding>/ { in_forwarding=1 }
-  /<\/forwarding>/ { in_forwarding=0 }
+  awk -v target="$TUN_INTERFACE" '
+  BEGIN { inserted = 0 }
   {
-    if (in_forwarding && /<enabled>1<\/enabled>/) {
-      dot_enabled=1
+    if ($0 ~ /<rules>/ && inserted == 0) {
+      print
+      print "          <rule uuid=\"5a73c3dc-69b1-4e15-89cb-b542aa2c1154\">"
+      print "            <enabled>1</enabled>"
+      print "            <statetype>keep</statetype>"
+      print "            <state-policy/>"
+      print "            <sequence>200</sequence>"
+      print "            <action>pass</action>"
+      print "            <quick>1</quick>"
+      print "            <interfacenot>0</interfacenot>"
+      print "            <interface>" target "</interface>"
+      print "            <direction>in</direction>"
+      print "            <ipprotocol>inet</ipprotocol>"
+      print "            <protocol>any</protocol>"
+      print "            <icmptype/>"
+      print "            <icmp6type/>"
+      print "            <source_net>" target "</source_net>"
+      print "            <source_not>0</source_not>"
+      print "            <source_port/>"
+      print "            <destination_net>" target "</destination_net>"
+      print "            <destination_not>0</destination_not>"
+      print "            <destination_port/>"
+      print "            <divert-to/>"
+      print "            <gateway/>"
+      print "            <replyto/>"
+      print "            <disablereplyto>0</disablereplyto>"
+      print "            <log>0</log>"
+      print "            <allowopts>0</allowopts>"
+      print "            <nosync>0</nosync>"
+      print "            <nopfsync>0</nopfsync>"
+      print "            <statetimeout/>"
+      print "            <udp-first/>"
+      print "            <udp-multiple/>"
+      print "            <udp-single/>"
+      print "            <max-src-nodes/>"
+      print "            <max-src-states/>"
+      print "            <max-src-conn/>"
+      print "            <max/>"
+      print "            <max-src-conn-rate/>"
+      print "            <max-src-conn-rates/>"
+      print "            <overload/>"
+      print "            <adaptivestart/>"
+      print "            <adaptiveend/>"
+      print "            <prio/>"
+      print "            <set-prio/>"
+      print "            <set-prio-low/>"
+      print "            <tag/>"
+      print "            <tagged/>"
+      print "            <tcpflags1/>"
+      print "            <tcpflags2/>"
+      print "            <tcpflags_any>0</tcpflags_any>"
+      print "            <categories/>"
+      print "            <sched/>"
+      print "            <tos/>"
+      print "            <shaper1/>"
+      print "            <shaper2/>"
+      print "            <description>Sing-Box TUN Allow All</description>"
+      print "          </rule>"
+      inserted = 1
+      next
     }
+    print
   }
-  END { exit !dot_enabled }
-' "$CONFIG_FILE"; then
-  log "$CYAN" "DoT转发已启用，忽略"
+  END {
+    if (inserted == 0) exit 1
+  }
+  ' "$CONFIG_FILE" > "$TMP_FILE"
+
+  if [ $? -eq 0 ] && [ -s "$TMP_FILE" ]; then
+    mv "$TMP_FILE" "$CONFIG_FILE"
+    log "$GREEN" "${TUN_INTERFACE} 防火墙规则添加完成"
+  else
+    rm -f "$TMP_FILE"
+    log "$RED" "防火墙规则添加失败，请检查配置文件"
+  fi
+fi
+
+# 更改 DNS 端口为 5355
+sleep 1
+log "$YELLOW" "更改 DNS 端口为 5355..."
+
+DNS_STATE=$(awk '
+BEGIN {
+  in_unbound = 0
+  in_general = 0
+  has_5355 = 0
+  has_other_port = 0
+}
+{
+  if ($0 ~ /<unboundplus[^>]*>/ || $0 ~ /<unbound[^>]*>/) in_unbound = 1
+  if (in_unbound && $0 ~ /<general>/) in_general = 1
+
+  if (in_unbound && in_general && $0 ~ /<port>5355<\/port>/) has_5355 = 1
+  if (in_unbound && in_general && $0 ~ /<port>[0-9]+<\/port>/ && $0 !~ /<port>5355<\/port>/) has_other_port = 1
+
+  if (in_unbound && $0 ~ /<\/general>/) in_general = 0
+  if ($0 ~ /<\/unboundplus>/ || $0 ~ /<\/unbound>/) {
+    in_unbound = 0
+    in_general = 0
+  }
+}
+END {
+  if (has_5355) {
+    print "already_ok"
+  } else if (has_other_port) {
+    print "need_replace"
+  } else {
+    print "need_insert"
+  }
+}
+' "$CONFIG_FILE")
+
+if [ "$DNS_STATE" = "already_ok" ]; then
+  log "$CYAN" "DNS 端口已经为 5355，跳过"
 else
   awk '
-  BEGIN { in_forwarding = 0 }
-  /<forwarding>/ { in_forwarding = 1 }
-  /<\/forwarding>/ { in_forwarding = 0 }
-  {
-    if (in_forwarding && /<enabled>0<\/enabled>/) {
-      sub(/<enabled>0<\/enabled>/, "<enabled>1</enabled>")
-    }
-    print
+  BEGIN {
+    in_unbound = 0
+    in_general = 0
+    port_handled = 0
   }
-  ' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
-  echo "DoT转发已启用"
+  {
+    if ($0 ~ /<unboundplus[^>]*>/ || $0 ~ /<unbound[^>]*>/) {
+      in_unbound = 1
+    }
+
+    if (in_unbound && $0 ~ /<general>/) {
+      in_general = 1
+      print
+      next
+    }
+
+    if (in_unbound && in_general && $0 ~ /<\/general>/) {
+      if (port_handled == 0) {
+        print "        <port>5355</port>"
+        port_handled = 1
+      }
+      in_general = 0
+      print
+      next
+    }
+
+    if (in_unbound && in_general && $0 ~ /<port>[0-9]+<\/port>/ && port_handled == 0) {
+      sub(/<port>[0-9]+<\/port>/, "<port>5355</port>")
+      port_handled = 1
+      print
+      next
+    }
+
+    print
+
+    if ($0 ~ /<\/unboundplus>/ || $0 ~ /<\/unbound>/) {
+      in_unbound = 0
+      in_general = 0
+    }
+  }
+  END {
+    if (port_handled == 0) exit 1
+  }
+  ' "$CONFIG_FILE" > "$TMP_FILE"
+
+  if [ $? -eq 0 ] && [ -s "$TMP_FILE" ]; then
+    mv "$TMP_FILE" "$CONFIG_FILE"
+    log "$GREEN" "DNS 端口已设置为 5355"
+  else
+    rm -f "$TMP_FILE"
+    log "$RED" "修改 DNS 端口失败，请检查配置文件"
+  fi
 fi
+
 echo ""
 
 # 删除菜单缓存
@@ -169,14 +296,11 @@ log "$YELLOW" "重新载入configd..."
 service configd restart > /dev/null 2>&1
 echo ""
 
-# 重启 Unbound DNS 服务
-log "$YELLOW" "重启Unbound DNS..."
-configctl unbound restart > /dev/null 2>&1
-echo ""
-
-# 重新载入防火墙规则
-log "$YELLOW" "重新加载防火墙规则..."
+# 重新载入接口与防火墙规则
+log "$YELLOW" "重新加载接口与防火墙规则..."
 configctl filter reload > /dev/null 2>&1
+configctl unbound restart > /dev/null 2>&1
+configctl template reload OPNsense/Unbound > /dev/null 2>&1
 echo ""
 
 # 完成提示
