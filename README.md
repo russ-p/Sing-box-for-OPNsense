@@ -28,10 +28,10 @@ sh uninstall.sh
 ```
 
 ## 配置步骤
-1. 安装完成，导航到 VPN>Proxy Suite>Sing-Box，修改sing-box出站（ outbounds到route部分) 内容并保存。
-2. 点击启动或重启按钮，转到 接口>分配，将tun_3000虚拟网卡添加为接口并启用，无需输入IPv4地址和网关。
-4. 转到 服务>Unbound DNS>常规，将监听接口修改为 53 以外的其他端口。
-5. 转到 防火墙>规则（新）），在tun接口添加一条 tun to tun 防火墙规则，允许tun子网访问。
+1. 转到 VPN>Proxy Suite>Sing-Box，修改outbounds到route部分内容并保存。
+2. 点击重启按钮，转到 接口>分配，检查是否添加 tun 虚拟网卡并启用。
+4. 转到 服务>Unbound DNS>常规，检查监听接口是否已修改为 53 以外其他端口。
+5. 转到 防火墙>规则（新）），检查tun接口是否添加一条 tun to tun 防火墙规则。
 6. 设置完成，客户端访问 ip111.cn，检查分流是否正常。
 
 ## 其他事项
