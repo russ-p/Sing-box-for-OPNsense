@@ -1,10 +1,10 @@
 <?php
 $log_file = "/var/log/sing-box.log";
 $max_lines = 5000;
-$display_lines = 200; // 前端仅显示最近 200 行
+$display_lines = 200; // Frontend only displays the most recent 200 lines
 
 if (!file_exists($log_file)) {
-    echo "[错误] 日志文件未找到！";
+    echo "[Error] Log file not found!";
     exit;
 }
 
@@ -15,7 +15,7 @@ $total_lines = $log->key();
 $log_content = [];
 $log->rewind();
 
-// 只保留最后 $max_lines 行
+// Keep only the last $max_lines lines
 $start_line = max(0, $total_lines - $max_lines);
 $log->seek($start_line);
 
@@ -23,12 +23,12 @@ while (!$log->eof()) {
     $log_content[] = trim($log->fgets());
 }
 
-// 仅在日志超出 $max_lines 时重写文件
+// Rewrite file only when logs exceed $max_lines
 if ($total_lines > $max_lines) {
     file_put_contents($log_file, implode("\n", $log_content) . "\n");
 }
 
-// 取最近 $display_lines 行显示
+// Take the most recent $display_lines lines for display
 $display_content = array_slice($log_content, -$display_lines);
 echo implode("\n", $display_content);
 ?>

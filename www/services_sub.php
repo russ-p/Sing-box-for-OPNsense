@@ -27,7 +27,7 @@ function log_message($message, $log_file = LOG_FILE) {
     try {
         file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
     } catch (Exception $e) {
-        error_log("日志写入失败: " . $e->getMessage());
+        error_log("Failed to write log: " . $e->getMessage());
     }
 }
 
@@ -87,7 +87,7 @@ function save_env_variable($key, $value, $env_file = ENV_FILE) {
         file_put_contents($env_file, implode("\n", $new_lines) . "\n", LOCK_EX);
         return true;
     } catch (Exception $e) {
-        error_log("环境变量保存失败: " . $e->getMessage());
+        error_log("Failed to save environment variable: " . $e->getMessage());
         return false;
     }
 }
@@ -153,37 +153,37 @@ function resolve_hostname_ips($host) {
 
 function validate_subscribe_url($url, &$error_message = '') {
     if (!is_string($url)) {
-        $error_message = '订阅地址格式无效！';
+        $error_message = 'Invalid subscription URL format!';
         return false;
     }
 
     $url = trim($url);
     if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
-        $error_message = '订阅地址格式无效！';
+        $error_message = 'Invalid subscription URL format!';
         return false;
     }
 
     $parts = parse_url($url);
     if ($parts === false) {
-        $error_message = '订阅地址解析失败！';
+        $error_message = 'Failed to parse subscription URL!';
         return false;
     }
 
     $scheme = strtolower($parts['scheme'] ?? '');
     if (!in_array($scheme, ALLOWED_URL_SCHEMES, true)) {
-        $error_message = '订阅地址仅允许使用 HTTP 或 HTTPS。';
+        $error_message = 'Subscription URL only allows HTTP or HTTPS.';
         return false;
     }
 
     $host = $parts['host'] ?? '';
     if ($host === '') {
-        $error_message = '订阅地址缺少主机名。';
+        $error_message = 'Subscription URL is missing hostname.';
         return false;
     }
 
     if (filter_var($host, FILTER_VALIDATE_IP)) {
         if (is_private_or_reserved_ip($host)) {
-            $error_message = '订阅地址不能使用内网或保留地址。';
+            $error_message = 'Subscription URL cannot use private or reserved addresses.';
             return false;
         }
         return true;
@@ -191,13 +191,13 @@ function validate_subscribe_url($url, &$error_message = '') {
 
     $resolved_ips = resolve_hostname_ips($host);
     if (empty($resolved_ips)) {
-        $error_message = '订阅地址主机名解析失败。';
+        $error_message = 'Failed to resolve subscription URL hostname.';
         return false;
     }
 
     foreach ($resolved_ips as $ip) {
         if (is_private_or_reserved_ip($ip)) {
-            $error_message = '订阅地址解析到了内网或保留地址，已拒绝保存。';
+            $error_message = 'Subscription URL resolved to a private or reserved address, saving denied.';
             return false;
         }
     }
@@ -210,7 +210,7 @@ function clear_log($log_file = LOG_FILE) {
         file_put_contents($log_file, '', LOCK_EX);
         return true;
     } catch (Exception $e) {
-        error_log('日志清空失败: ' . $e->getMessage());
+        error_log('Failed to clear log: ' . $e->getMessage());
         return false;
     }
 }
@@ -277,28 +277,28 @@ function execute_subscribe_script(&$return_var, &$output_lines) {
 
     $lock_fp = @fopen(LOCK_FILE, 'c');
     if ($lock_fp === false) {
-        log_message('无法创建锁文件，订阅任务未执行。');
+        log_message('Cannot create lock file, subscription task not executed.');
         return false;
     }
 
     if (!flock($lock_fp, LOCK_EX | LOCK_NB)) {
         fclose($lock_fp);
-        log_message('订阅任务已在执行中，拒绝重复启动。');
+        log_message('Subscription task is already running, duplicate start rejected.');
         return false;
     }
 
     if (!file_exists(SCRIPT_FILE) || !is_executable(SCRIPT_FILE)) {
         $return_var = 127;
-        log_message('订阅脚本不存在或不可执行：' . SCRIPT_FILE);
+        log_message('Subscription script does not exist or is not executable: ' . SCRIPT_FILE);
         flock($lock_fp, LOCK_UN);
         fclose($lock_fp);
         return true;
     }
 
-    log_message('开始执行订阅操作。');
+    log_message('Starting subscription operation.');
     $cmd = '/usr/bin/env bash ' . escapeshellarg(SCRIPT_FILE) . ' >> ' . escapeshellarg(LOG_FILE) . ' 2>&1';
     exec($cmd, $output_lines, $return_var);
-    log_message('订阅操作执行完毕！退出码：' . $return_var);
+    log_message('Subscription operation completed! Exit code: ' . $return_var);
 
     flock($lock_fp, LOCK_UN);
     fclose($lock_fp);
@@ -317,17 +317,17 @@ function handle_save_action(array &$messages) {
     }
 
     if (save_env_variable('CLASH_URL', $url)) {
-        log_message('订阅地址已保存：' . $url);
-        add_message($messages, 'success', '地址保存成功！');
+        log_message('Subscription URL saved: ' . $url);
+        add_message($messages, 'success', 'Address saved successfully!');
         return;
     }
 
-    add_message($messages, 'danger', '保存订阅地址失败！');
+    add_message($messages, 'danger', 'Failed to save subscription address!');
 }
 
 function handle_subscribe_action(array &$messages) {
     if (is_subscribe_running()) {
-        add_message($messages, 'warning', '订阅任务正在执行中，请勿重复提交。');
+        add_message($messages, 'warning', 'Subscription task is currently running, please do not submit again.');
         return;
     }
 
@@ -336,26 +336,26 @@ function handle_subscribe_action(array &$messages) {
     $executed = execute_subscribe_script($return_var, $output_lines);
 
     if (!$executed) {
-        add_message($messages, 'danger', '无法获取任务锁，订阅任务未执行。');
+        add_message($messages, 'danger', 'Cannot acquire task lock, subscription task not executed.');
         return;
     }
 
     if ($return_var === 0) {
-        add_message($messages, 'success', '订阅操作执行成功。');
+        add_message($messages, 'success', 'Subscription operation executed successfully.');
         return;
     }
 
-    add_message($messages, 'danger', '订阅操作执行失败，退出码：' . $return_var . '。请查看日志。');
+    add_message($messages, 'danger', 'Subscription operation failed, exit code: ' . $return_var . '. Please check logs.');
 }
 
 function handle_clear_log_action(array &$messages) {
     if (clear_log()) {
-        log_message('日志已清空。');
-        add_message($messages, 'success', '日志已清空！');
+        log_message('Log cleared.');
+        add_message($messages, 'success', 'Log cleared!');
         return;
     }
 
-    add_message($messages, 'danger', '日志清空失败！');
+    add_message($messages, 'danger', 'Failed to clear log!');
 }
 
 function handle_form_submission() {
@@ -367,7 +367,7 @@ function handle_form_submission() {
 
     $csrf_token = $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($csrf_token)) {
-        add_message($messages, 'danger', 'CSRF 校验失败，请刷新页面后重试。');
+        add_message($messages, 'danger', 'CSRF validation failed, please refresh the page and try again.');
         return $messages;
     }
 
@@ -407,11 +407,11 @@ $csrf_token = get_csrf_token();
 $is_running = is_subscribe_running();
 ?>
 
-<!-- 页面表单 -->
+<!-- Page Form -->
 <section class="page-content-main">
     <div class="container-fluid">
         <div class="row">
-            <!-- 提示信息 -->
+            <!-- Alert Messages -->
             <?php if (!empty($messages)): ?>
                 <div class="col-xs-12">
                     <?php foreach ($messages as $message): ?>
@@ -420,24 +420,24 @@ $is_running = is_subscribe_running();
                 </div>
             <?php endif; ?>
 
-            <!-- 订阅管理 -->
+            <!-- Subscription Management -->
             <section class="col-xs-12">
                 <div class="content-box tab-content table-responsive __mb">
                     <table class="table table-striped">
                         <tbody>
-                            <tr><td><strong>Sing-Box 订阅管理</strong></td></tr>
+                            <tr><td><strong>Sing-Box Subscription Management</strong></td></tr>
                             <tr>
                                 <td>
                                     <form method="post" class="form-group">
                                         <input type="hidden" name="csrf_token" value="<?= h($csrf_token); ?>" />
-                                        <label for="subscribe_url">订阅地址：</label>
-                                        <input type="text" id="subscribe_url" name="subscribe_url" value="<?= h($current_url); ?>" class="form-control" placeholder="输入 HTTP 或 HTTPS 订阅地址" autocomplete="off" />
+                                        <label for="subscribe_url">Subscription URL:</label>
+                                        <input type="text" id="subscribe_url" name="subscribe_url" value="<?= h($current_url); ?>" class="form-control" placeholder="Enter HTTP or HTTPS subscription URL" autocomplete="off" />
                                         <br>
-                                        <button type="submit" name="save" class="btn btn-danger"><i class="fa fa-save"></i> 保存设置</button>
-                                        <button type="submit" name="action" value="<?= h(SUBSCRIBE_ACTION); ?>" class="btn btn-success" onclick="return confirm('确认立即开始订阅吗？');" <?= $is_running ? 'disabled="disabled"' : ''; ?>><i class="fa fa-sync"></i> 开始订阅</button>
-                                        <button type="submit" name="action" value="<?= h(CLEAR_LOG_ACTION); ?>" class="btn btn-warning" onclick="return confirm('确认清空日志吗？');"><i class="fa fa-trash"></i> 清空日志</button>
+                                        <button type="submit" name="save" class="btn btn-danger"><i class="fa fa-save"></i> Save Settings</button>
+                                        <button type="submit" name="action" value="<?= h(SUBSCRIBE_ACTION); ?>" class="btn btn-success" onclick="return confirm('Confirm to start subscription immediately?');" <?= $is_running ? 'disabled="disabled"' : ''; ?>><i class="fa fa-sync"></i> Start Subscription</button>
+                                        <button type="submit" name="action" value="<?= h(CLEAR_LOG_ACTION); ?>" class="btn btn-warning" onclick="return confirm('Confirm to clear log?');"><i class="fa fa-trash"></i> Clear Log</button>
                                         <?php if ($is_running): ?>
-                                            <span class="text-warning" style="margin-left: 10px;">订阅任务正在执行中...</span>
+                                            <span class="text-warning" style="margin-left: 10px;">Subscription task is running...</span>
                                         <?php endif; ?>
                                     </form>
                                 </td>
@@ -447,12 +447,12 @@ $is_running = is_subscribe_running();
                 </div>
             </section>
 
-            <!-- 实时日志显示 -->
+            <!-- Real-time Log Display -->
             <section class="col-xs-12">
                 <div class="content-box tab-content table-responsive __mb">
                     <table class="table table-striped">
                         <tbody>
-                            <tr><td><strong>日志视图</strong></td></tr>
+                            <tr><td><strong>Log View</strong></td></tr>
                             <tr>
                                 <td>
                                     <form class="form-group" onsubmit="return false;">

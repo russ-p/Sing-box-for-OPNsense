@@ -1,39 +1,39 @@
 ## Sing-box for OPNsense
-Sing-box 一键安装工具，在 OPNsense 上实现透明代理功能。OPNsense 26.1.6测试通过。
+One-click installation tool for Sing-box, implementing transparent proxy functionality on OPNsense. Tested on OPNsense 26.1.6.
 
 ![](images/proxy.png)
 
-## 程序版本
-[Vincent-Loeng大佬魔改Sing-Box](https://github.com/Vincent-Loeng/sing-box) 
+## Program Version
+[Vincent-Loeng's modified Sing-Box](https://github.com/Vincent-Loeng/sing-box)
 
-## 注意事项
-1. 当前仅支持x86_64 平台。S
-2. 脚本不提供任何节点信息，请准备好自己的出站配置文件。
-3. 脚本会自动添加tun接口、防火墙规则，修改unbound默认端口。
-4. 脚本集成配置模板，只需补充出站部分的配置部分配置即可使用。
-5. 由于sing-box不同版本的配置有差异，已发布Release配置文件只针对当前安装程序版本。
-6. 为减少长期运行保存的日志数量，在调试完成后，请将配置的日志类型修改为error或warn。
+## Important Notes
+1. Currently supports x86_64 platform only.
+2. The script does not provide any node information; please prepare your own outbound configuration file.
+3. The script will automatically add TUN interface, firewall rules, and modify the Unbound default port.
+4. The script includes configuration templates; you only need to supplement the outbound configuration section to get started.
+5. Due to configuration differences between different Sing-box versions, the released configuration files are specific to the current installer version.
+6. To reduce the number of logs saved during long-term operation, please change the log type to "error" or "warn" after debugging is complete.
 
-## 安装命令
+## Installation Command
 
 ```bash
 sh install.sh
 ```
 ![](images/install.png)
 
-## 卸载命令
+## Uninstall Command
 
 ```bash
 sh uninstall.sh
 ```
 
-## 配置步骤
-1. 转到 VPN>Proxy Suite>Sing-Box，修改outbounds到route部分内容并保存。
-2. 点击重启按钮，转到 接口>分配，检查是否添加 tun 虚拟网卡并启用。
-4. 转到 服务>Unbound DNS>常规，检查监听接口是否已修改为 53 以外其他端口。
-5. 转到 防火墙>规则（新）），检查tun接口是否添加一条 tun to tun 防火墙规则。
-6. 设置完成，客户端访问 ip111.cn，检查分流是否正常。
+## Configuration Steps
+1. Go to VPN > Proxy Suite > Sing-Box, modify the outbound to route section content and save.
+2. Click the restart button, then go to Interfaces > Assignments, check if the TUN virtual network interface has been added and enable it.
+4. Go to Services > Unbound DNS > General, check if the listening interface has been modified to a port other than 53.
+5. Go to Firewall > Rules (Floating), check if a TUN to TUN firewall rule has been added to the TUN interface.
+6. Configuration complete. Clients can access ip111.cn to check if traffic splitting is working properly.
 
-## 其他事项
-1. 默认配置文件开启了clash api功能，访问 http://lan_ip:9090/ui 登录仪表盘查看代理连接信息。
-2. 订阅转换可以设置定时任务自动更新。转到 系统>设置>任务，添加”Renew sing-box subscription”任务项即可。
+## Additional Notes
+1. The default configuration file has Clash API functionality enabled. Access http://lan_ip:9090/ui to log into the dashboard and view proxy connection information.
+2. Subscription updates can be set up as scheduled tasks for automatic updates. Go to System > Settings > Cron and add the "Renew sing-box subscription" task.

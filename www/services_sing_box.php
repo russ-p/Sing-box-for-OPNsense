@@ -44,11 +44,11 @@ function validateJsonConfig($content)
 function validateSingBoxConfig($binary, $file)
 {
     if (!file_exists($file)) {
-        return [false, "配置文件不存在，无法校验。"];
+        return [false, "Configuration file does not exist, cannot validate."];
     }
 
     if (!file_exists($binary) || !is_executable($binary)) {
-        return [false, "sing-box 可执行文件不存在或不可执行：{$binary}"];
+        return [false, "sing-box executable does not exist or is not executable: {$binary}"];
     }
 
     $command = escapeshellarg($binary) . " check -c " . escapeshellarg($file);
@@ -56,22 +56,22 @@ function validateSingBoxConfig($binary, $file)
     $result = trim(implode("\n", $output));
 
     if ($return_var === 0) {
-        return [true, $result !== '' ? $result : "sing-box 配置校验通过。"];
+        return [true, $result !== '' ? $result : "sing-box configuration validated successfully."];
     }
 
-    return [false, $result !== '' ? $result : "sing-box 配置校验失败。"];
+    return [false, $result !== '' ? $result : "sing-box configuration validation failed."];
 }
 
 function handleServiceAction($action)
 {
     $messages = [
-        'start' => ["sing-box 服务启动成功！", "sing-box 服务启动失败！"],
-        'stop' => ["sing-box 服务已停止！", "sing-box 服务停止失败！"],
-        'restart' => ["sing-box 服务重启成功！", "sing-box 服务重启失败！"],
+        'start' => ["sing-box service started successfully!", "sing-box service startup failed!"],
+        'stop' => ["sing-box service stopped!", "sing-box service stop failed!"],
+        'restart' => ["sing-box service restarted successfully!", "sing-box service restart failed!"],
     ];
 
     if (!isset($messages[$action])) {
-        return [false, "无效的操作！"];
+        return [false, "Invalid operation!"];
     }
 
     list($output, $return_var) = execCommand("service sing-box " . escapeshellarg($action));
@@ -86,38 +86,38 @@ function handleServiceAction($action)
 function saveConfig($binary, $file, $content)
 {
     if (trim($content) === '') {
-        return [false, "配置内容不能为空！"];
+        return [false, "Configuration content cannot be empty!"];
     }
 
     $jsonValidationResult = validateJsonConfig($content);
     if ($jsonValidationResult !== true) {
-        return [false, "JSON 格式错误：{$jsonValidationResult}"];
+        return [false, "JSON format error: {$jsonValidationResult}"];
     }
 
     $dir = dirname($file);
     if (!is_dir($dir) || !is_writable($dir)) {
-        return [false, "配置目录不可写：{$dir}"];
+        return [false, "Configuration directory is not writable: {$dir}"];
     }
 
     if (file_exists($file) && !is_writable($file)) {
-        return [false, "配置保存失败，请确保文件可写。"];
+        return [false, "Configuration save failed, please ensure file is writable."];
     }
 
     $temp_file = tempnam(sys_get_temp_dir(), 'singbox_cfg_');
     if ($temp_file === false) {
-        return [false, "无法创建临时文件。"];
+        return [false, "Cannot create temporary file."];
     }
 
     $backup_file = $file . '.bak';
 
     try {
         if (file_put_contents($temp_file, $content, LOCK_EX) === false) {
-            return [false, "写入临时配置文件失败。"];
+            return [false, "Failed to write temporary configuration file."];
         }
 
         list($isValid, $checkMessage) = validateSingBoxConfig($binary, $temp_file);
         if (!$isValid) {
-            return [false, "JSON 格式正确，但 sing-box 配置校验失败：" . $checkMessage];
+            return [false, "JSON format is correct, but sing-box configuration validation failed: " . $checkMessage];
         }
 
         if (file_exists($file)) {
@@ -125,10 +125,10 @@ function saveConfig($binary, $file, $content)
         }
 
         if (file_put_contents($file, $content, LOCK_EX) === false) {
-            return [false, "配置保存失败！"];
+            return [false, "Configuration save failed!"];
         }
 
-        return [true, "配置保存成功！ sing-box 校验结果：" . $checkMessage];
+        return [true, "Configuration saved successfully! sing-box validation result: " . $checkMessage];
     } finally {
         @unlink($temp_file);
     }
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         default:
-            $message = '无效的操作！';
+            $message = 'Invalid operation!';
             $message_type = 'danger';
             break;
     }
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $config_raw_content = readFileContent(SINGBOX_CONFIG_FILE, '');
 if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message === '') {
-    $message = '配置文件未找到，请先创建或保存配置。';
+    $message = 'Configuration file not found, please create or save configuration first.';
     $message_type = 'warning';
 }
 ?>
@@ -194,12 +194,12 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                     <table class="table table-striped">
                         <tbody>
                             <tr>
-                                <td><strong>服务状态</strong></td>
+                                <td><strong>Service Status</strong></td>
                             </tr>
                             <tr>
                                 <td>
                                     <div id="sing-box-status" class="alert alert-secondary status-alert">
-                                        <i class="fa fa-circle-notch fa-spin"></i> 检查中...
+                                        <i class="fa fa-circle-notch fa-spin"></i> Checking...
                                     </div>
                                 </td>
                             </tr>
@@ -212,19 +212,19 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                     <table class="table table-striped">
                         <tbody>
                             <tr>
-                                <td><strong>服务控制</strong></td>
+                                <td><strong>Service Control</strong></td>
                             </tr>
                             <tr>
                                 <td>
                                     <form method="post" class="form-inline action-form">
                                         <button type="submit" name="action" value="start" class="btn btn-success">
-                                            <i class="fa fa-play"></i> 启动
+                                            <i class="fa fa-play"></i> Start
                                         </button>
                                         <button type="submit" name="action" value="stop" class="btn btn-danger">
-                                            <i class="fa fa-stop"></i> 停止
+                                            <i class="fa fa-stop"></i> Stop
                                         </button>
                                         <button type="submit" name="action" value="restart" class="btn btn-warning">
-                                            <i class="fa fa-refresh"></i> 重启
+                                            <i class="fa fa-refresh"></i> Restart
                                         </button>
                                     </form>
                                 </td>
@@ -238,7 +238,7 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                     <table class="table table-striped">
                         <tbody>
                             <tr>
-                                <td><strong>配置管理</strong></td>
+                                <td><strong>Configuration Management</strong></td>
                             </tr>
                             <tr>
                                 <td>
@@ -254,7 +254,7 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                                             class="form-control json-editor"
                                             style="max-width:none;"><?= e($config_raw_content); ?></textarea>
                                         <button type="submit" name="action" value="save_config" class="btn btn-danger save-config-button">
-                                            <i class="fa fa-save"></i> 保存配置
+                                            <i class="fa fa-save"></i> Save Configuration
                                         </button>
                                     </form>
                                 </td>
@@ -268,7 +268,7 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                     <table class="table table-striped">
                         <tbody>
                             <tr>
-                                <td><strong>日志视图</strong></td>
+                                <td><strong>Log View</strong></td>
                             </tr>
                             <tr>
                                 <td>
@@ -336,10 +336,10 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
         error: 'alert alert-danger status-alert'
     };
     const STATUS_HTML_MAP = {
-        running: '<i class="fa fa-check-circle text-success"></i> sing-box 正在运行',
-        stopped: '<i class="fa fa-times-circle text-danger"></i> sing-box 已停止',
-        unknown: '<i class="fa fa-exclamation-circle text-warning"></i> 状态未知',
-        error: '<i class="fa fa-times-circle text-danger"></i> 状态检查失败'
+        running: '<i class="fa fa-check-circle text-success"></i> sing-box is running',
+        stopped: '<i class="fa fa-times-circle text-danger"></i> sing-box is stopped',
+        unknown: '<i class="fa fa-exclamation-circle text-warning"></i> Status unknown',
+        error: '<i class="fa fa-times-circle text-danger"></i> Status check failed'
     };
     const POLL_INTERVAL = 1000;
 
@@ -423,7 +423,7 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
             .then(response => response.json())
             .then(data => setStatus(data.status))
             .catch(error => {
-                console.error('状态检查失败:', error.message);
+                console.error('Status check failed:', error.message);
                 setStatus('error');
             });
     }
@@ -445,9 +445,9 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                 }
             })
             .catch(error => {
-                console.error('日志刷新失败:', error.message);
+                console.error('Log refresh failed:', error.message);
                 const logViewer = document.getElementById('log-viewer');
-                logViewer.value = '[错误] 无法加载日志，请检查网络或服务器状态。';
+                logViewer.value = '[Error] Cannot load logs, please check network or server status.';
                 logViewer.scrollTop = logViewer.scrollHeight;
             });
     }
@@ -554,7 +554,7 @@ if ($config_raw_content === '' && !file_exists(SINGBOX_CONFIG_FILE) && $message 
                 }
 
                 submitter.disabled = false;
-                submitter.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 处理中...';
+                submitter.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
             });
         });
     }
